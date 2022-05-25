@@ -1,249 +1,87 @@
 #include <stdio.h>
 #include <stdint.h>
 
-//If you are using valgrind, run with --fair-sched=yes. See https://valgrind.org/docs/manual/manual-core.html#manual-core.pthreads_perf_sched
-//****************** ARGS ******************
-//#R =    4 = num_records
-//#F =    8 = num_features
-//#C =    0 = num_cols_per_rec_pow_2
-//#Q =    1 = max_num_queries
-//#K =    4 = max_k
-//#S =    1 = num_searches
-//        ******************************************
-//        Memory Size = 14.0G
-//Num Apucs = 4
-//HW general info: frequency = 500 MHz, indirect DMA read enabled, indirect DMA write enabled
-//        Constantly mapped memory = 3.0G
-//Dynamically mapped memory = 11.0G
-//Initializing gsld_l1 ...
-//**************** ALLOCATION **************
-//[R]  =    4 x    8 = #R x #F
-//[Q]  =    1 x    8 = #Q x #F
-//[iF] =    4 x    1 = #R x #Q (iv_ref)
-//[iR] =    4 x    1 = #K x #Q (iv_res)
-//******************************************
-//****************** RECORDS **** Max (16 x 8) u.l. corner *********************
-//[R] = 4 (#R) x 8 (#F); [print] = 4 x 8
-//------------------------------------------------------------------------------
-//3F5C 3D28 3F22 3F32 3FA6 3B29 3CAF 3F13
-//uf16: 3F5C, s16 =    0, e16 = 3C00, x16 = 2C00, m16 =  35C, n16 =  15C
-//u32 =    1AE00, s32 =        0, x32 =     2C00, e32 =        0, m32 =    1ae00
-//
-//                                                                         || 0.000000
-//uf16: 3D28, s16 =    0, e16 = 3C00, x16 = 2C00, m16 =  128, n16 =  128
-//u32 =     9400, s32 =        0, x32 =     2C00, e32 =        0, m32 =     9400
-//
-//0.000000
-//uf16: 3F22, s16 =    0, e16 = 3C00, x16 = 2C00, m16 =  322, n16 =  122
-//u32 =    19100, s32 =        0, x32 =     2C00, e32 =        0, m32 =    19100
-//
-//0.000000
-//uf16: 3F32, s16 =    0, e16 = 3C00, x16 = 2C00, m16 =  332, n16 =  132
-//u32 =    19900, s32 =        0, x32 =     2C00, e32 =        0, m32 =    19900
-//
-//0.000000
-//uf16: 3FA6, s16 =    0, e16 = 3C00, x16 = 2C00, m16 =  3A6, n16 =  1A6
-//u32 =    1D300, s32 =        0, x32 =     2C00, e32 =        0, m32 =    1d300
-//
-//0.000000
-//uf16: 3B29, s16 =    0, e16 = 3800, x16 = 2800, m16 =  329, n16 =  129
-//u32 =    19480, s32 =        0, x32 =     2800, e32 =        0, m32 =    19480
-//
-//0.000000
-//uf16: 3CAF, s16 =    0, e16 = 3C00, x16 = 2C00, m16 =   AF, n16 =   AF
-//u32 =     5780, s32 =        0, x32 =     2C00, e32 =        0, m32 =     5780
-//
-//0.000000
-//uf16: 3F13, s16 =    0, e16 = 3C00, x16 = 2C00, m16 =  313, n16 =  113
-//u32 =    18980, s32 =        0, x32 =     2C00, e32 =        0, m32 =    18980
-//
-//0.000000
-//3C39 3E37 3DD2 3E84 3CEB 3E0E 3FCF 3FAA
-//uf16: 3C39, s16 =    0, e16 = 3C00, x16 = 2C00, m16 =   39, n16 =   39
-//u32 =     1C80, s32 =        0, x32 =     2C00, e32 =        0, m32 =     1c80
-//
-//                                                                          || 0.000000
-//uf16: 3E37, s16 =    0, e16 = 3C00, x16 = 2C00, m16 =  237, n16 =   37
-//u32 =    11B80, s32 =        0, x32 =     2C00, e32 =        0, m32 =    11b80
-//
-//0.000000
-//uf16: 3DD2, s16 =    0, e16 = 3C00, x16 = 2C00, m16 =  1D2, n16 =  1D2
-//u32 =     E900, s32 =        0, x32 =     2C00, e32 =        0, m32 =     e900
-//
-//0.000000
-//uf16: 3E84, s16 =    0, e16 = 3C00, x16 = 2C00, m16 =  284, n16 =   84
-//u32 =    14200, s32 =        0, x32 =     2C00, e32 =        0, m32 =    14200
-//
-//0.000000
-//uf16: 3CEB, s16 =    0, e16 = 3C00, x16 = 2C00, m16 =   EB, n16 =   EB
-//u32 =     7580, s32 =        0, x32 =     2C00, e32 =        0, m32 =     7580
-//
-//0.000000
-//uf16: 3E0E, s16 =    0, e16 = 3C00, x16 = 2C00, m16 =  20E, n16 =    E
-//u32 =    10700, s32 =        0, x32 =     2C00, e32 =        0, m32 =    10700
-//
-//0.000000
-//uf16: 3FCF, s16 =    0, e16 = 3C00, x16 = 2C00, m16 =  3CF, n16 =  1CF
-//u32 =    1E780, s32 =        0, x32 =     2C00, e32 =        0, m32 =    1e780
-//
-//0.000000
-//uf16: 3FAA, s16 =    0, e16 = 3C00, x16 = 2C00, m16 =  3AA, n16 =  1AA
-//u32 =    1D500, s32 =        0, x32 =     2C00, e32 =        0, m32 =    1d500
-//
-//0.000000
-//3E8B 3EDF 3A44 3E6E 3416 3BE3 3A32 3F37
-//uf16: 3E8B, s16 =    0, e16 = 3C00, x16 = 2C00, m16 =  28B, n16 =   8B
-//u32 =    14580, s32 =        0, x32 =     2C00, e32 =        0, m32 =    14580
-//
-//                                                                         || 0.000000
-//uf16: 3EDF, s16 =    0, e16 = 3C00, x16 = 2C00, m16 =  2DF, n16 =   DF
-//u32 =    16F80, s32 =        0, x32 =     2C00, e32 =        0, m32 =    16f80
-//
-//0.000000
-//uf16: 3A44, s16 =    0, e16 = 3800, x16 = 2800, m16 =  244, n16 =   44
-//u32 =    12200, s32 =        0, x32 =     2800, e32 =        0, m32 =    12200
-//
-//0.000000
-//uf16: 3E6E, s16 =    0, e16 = 3C00, x16 = 2C00, m16 =  26E, n16 =   6E
-//u32 =    13700, s32 =        0, x32 =     2C00, e32 =        0, m32 =    13700
-//
-//0.000000
-//uf16: 3416, s16 =    0, e16 = 3400, x16 = 2400, m16 =   16, n16 =   16
-//u32 =      B00, s32 =        0, x32 =     2400, e32 =        0, m32 =      b00
-//
-//0.000000
-//uf16: 3BE3, s16 =    0, e16 = 3800, x16 = 2800, m16 =  3E3, n16 =  1E3
-//u32 =    1F180, s32 =        0, x32 =     2800, e32 =        0, m32 =    1f180
-//
-//0.000000
-//uf16: 3A32, s16 =    0, e16 = 3800, x16 = 2800, m16 =  232, n16 =   32
-//u32 =    11900, s32 =        0, x32 =     2800, e32 =        0, m32 =    11900
-//
-//0.000000
-//uf16: 3F37, s16 =    0, e16 = 3C00, x16 = 2C00, m16 =  337, n16 =  137
-//u32 =    19B80, s32 =        0, x32 =     2C00, e32 =        0, m32 =    19b80
-//
-//0.000000
-//3A82 3D35 3A14 397B 3FFF 3B7E 3E0D 3F5B
-//uf16: 3A82, s16 =    0, e16 = 3800, x16 = 2800, m16 =  282, n16 =   82
-//u32 =    14100, s32 =        0, x32 =     2800, e32 =        0, m32 =    14100
-//
-//                                                                         || 0.000000
-//uf16: 3D35, s16 =    0, e16 = 3C00, x16 = 2C00, m16 =  135, n16 =  135
-//u32 =     9A80, s32 =        0, x32 =     2C00, e32 =        0, m32 =     9a80
-//
-//0.000000
-//uf16: 3A14, s16 =    0, e16 = 3800, x16 = 2800, m16 =  214, n16 =   14
-//u32 =    10A00, s32 =        0, x32 =     2800, e32 =        0, m32 =    10a00
-//
-//0.000000
-//uf16: 397B, s16 =    0, e16 = 3800, x16 = 2800, m16 =  17B, n16 =  17B
-//u32 =     BD80, s32 =        0, x32 =     2800, e32 =        0, m32 =     bd80
-//
-//0.000000
-//uf16: 3FFF, s16 =    0, e16 = 3C00, x16 = 2C00, m16 =  3FF, n16 =  1FF
-//u32 =    1FF80, s32 =        0, x32 =     2C00, e32 =        0, m32 =    1ff80
-//
-//0.000000
-//uf16: 3B7E, s16 =    0, e16 = 3800, x16 = 2800, m16 =  37E, n16 =  17E
-//u32 =    1BF00, s32 =        0, x32 =     2800, e32 =        0, m32 =    1bf00
-//
-//0.000000
-//uf16: 3E0D, s16 =    0, e16 = 3C00, x16 = 2C00, m16 =  20D, n16 =    D
-//u32 =    10680, s32 =        0, x32 =     2C00, e32 =        0, m32 =    10680
-//
-//0.000000
-//uf16: 3F5B, s16 =    0, e16 = 3C00, x16 = 2C00, m16 =  35B, n16 =  15B
-//u32 =    1AD80, s32 =        0, x32 =     2C00, e32 =        0, m32 =    1ad80
-//
-//0.000000
-//******************************************************************************
-//Search in Focus ...
-//search_in_focus() completed successfully
-//****************** QUERIES **** Max (16 x 8) u.l. corner *********************
-//[Q] = 1 (#Q) x 8 (#F); [print] = 1 x 8
-//------------------------------------------------------------------------------
-//3E73 3C5E 3E8D 3E19 3DF3 3FE4 3C57 3F16 || 15987 15454 16013 15897 15859 16356 15447 16150
-//******************************************************************************
-//Performing search 1 of 1 (num_queries = 1, k = 4)...
-//Finished searching
-//******************* IV_RES ***************************************************
-//[iR] = 4 (#K) x 1 (#Q); [print] = 4 x 1
-//------------------------------------------------------------------------------
-//0: 42E2 || 17122
-//1: 42A2 || 17058
-//2: 41D4 || 16852
-//3: 41B7 || 16823
-//******************************************************************************
-//Checking results ...
-//******************* IV_REF ***************************************************
-//[iF] = 4 (#R) x 1 (#Q); [print] = 4 x 1
-//------------------------------------------------------------------------------
-//3: 41B7 || 16823
-//2: 41D4 || 16852
-//1: 42A2 || 17058
-//0: 42E2 || 17122
-//******************************************************************************
-//Finished checking results
-//
-//        Success
+typedef union {
+    struct {  // little-endian
+        uint16_t m9: 9;
+        uint16_t e6: 6;
+        uint16_t s1: 1;
+    } fields;
+    uint16_t u16datum;
+} GsiF16;
 
-double d32(uint32_t f32) {
-    double result = ((double) (* ((float *)(& f32))));
+typedef union {
+    struct {  // little-endian
+        uint16_t mA: 10;  // A is hex for decimal 10.
+        uint16_t e5:  5;
+        uint16_t s1:  1;
+    } fields;
+    uint16_t u16datum;
+} HalF16;  // IEEE 754r half-precision
+
+typedef union {
+    struct {  // little-endian
+        uint32_t mW: 23;  // W is the 23-rd letter of the alphabet.
+        uint32_t e8:  8;
+        uint32_t s1:  1;
+    } fields;
+    uint32_t u32datum;
+    float    f32datum;
+} FloF32;
+
+FloF32 floF32_from_halF16 (HalF16 halF16) {
+    FloF32 result;
+    result.fields.s1 = halF16.fields.s1;
+    result.fields.e8 = halF16.fields.e5 << 3;
+    result.fields.mW = halF16.fields.mA << 13;
     return result;
 }
 
-uint16_t f16_from_f32(uint32_t f32) {
-    uint16_t f16 = 0;
-    if (0 == f32) {
-        return f16;
-    } else {
-        /* non-optimal, but crystal-clear */
-        uint16_t s16 = (uint16_t)((f32 & 0x80000000) >> 16);
-        uint16_t e16 = (uint16_t)((f32 & 0x7C000000) >> 16);
-        uint16_t m16 = (uint16_t)((f32 & 0x007FE000) >> 13);
-        f16 = (s16 | e16 | m16);
-        return f16;
-    }
+HalF16 halF16_from_floF32 (FloF32 floF32) {
+    HalF16  result;
+    result.fields.s1 = floF32.fields.s1;
+    result.fields.e5 = floF32.fields.e8 >> 3;
+    result.fields.mA = floF32.fields.mW >> 13;
+    return result;
 }
 
-uint32_t f32_from_f16(uint16_t f16) {
-    uint32_t f32 = 0;
-    if (0 == f16) {
-        return f32;
-    } else {
-        /* non-optimal, but crystal-clear */
-        uint32_t s32 = (uint32_t)(0x8000 & f16) << 16;
-        uint32_t e32 = (uint32_t)(0x7C00 & f16) << 16;
-        uint32_t m32 = (uint32_t)(0x03FF & f16) << 13;
-        f32 = (s32 | e32 | m32);
-        return f32;
-    }
+GsiF16 gsiF16_from_floF32 (FloF32 floF32) {
+    GsiF16 result;
+    result.fields.s1 = floF32.fields.s1;
+    result.fields.e6 = floF32.fields.e8 >> 2;
+    result.fields.m9 = floF32.fields.mW >> 14;
+    return result;
 }
 
-double d16(uint16_t f16) {
-    uint32_t f32 = f32_from_f16(f16);
-    double result = d32(f32);
+FloF32 floF32_from_gsiF16 (GsiF16 gsiF16) {
+    FloF32 result;
+    result.fields.s1 = gsiF16.fields.s1;
+    result.fields.e8 = gsiF16.fields.e6 << 2;
+    result.fields.mW = gsiF16.fields.m9 << 14;
     return result;
 }
 
 int main() {
-    uint32_t s32 = 0 << 31;
-    uint32_t e32 = 0x0080 << 23;
-    uint32_t m32 = (0x0049 << 16) | 0x0FBD;
-    uint32_t f32 = (s32 | e32 | m32);
+    FloF32 floF32;
+    floF32.fields.s1 = 0;
+    floF32.fields.e8 = 0x80;
+    floF32.fields.mW = 0x490FBD;
+    printf("fu32: 0x%08X, s1: 0x%08X, e8: 0x%08X, mW: 0x%08X, f: %f\n",
+           floF32.u32datum,
+           floF32.fields.s1, floF32.fields.e8, floF32.fields.mW,
+           floF32.f32datum);
 
-    printf("s32 = 0x%08X, e32 = 0x%08X, m32 = 0x%08X, f32 = 0x%08X, d = %f\n",
-           s32, e32, m32, f32, d32(f32));
+    HalF16 halF16 = halF16_from_floF32(floF32);
+    printf("fu16: 0x%08X, s1: 0x%08X, e5: 0x%08X, mA: 0x%08X, f: %f\n",
+           halF16.u16datum,
+           halF16.fields.s1, halF16.fields.e5, halF16.fields.mA,
+           floF32_from_halF16(halF16).f32datum);
 
-    uint16_t f16 = f16_from_f32(f32);
-
-    uint16_t s16 = (uint16_t)((f32 & 0x80000000) >> 16);
-    uint16_t e16 = (uint16_t)((f32 & 0x7C000000) >> 16);
-    uint16_t m16 = (uint16_t)((f32 & 0x007FE000) >> 13);
-
-    printf("s16 = 0x%04X, e16 = 0x%04X, m16 = 0x%04X, f16 = 0x%04X, d = %f\n",
-           s16, e16, m16, f16, d16(f16));
+    GsiF16 gsiF16 = gsiF16_from_floF32(floF32);
+    printf("gu16: 0x%08X, s1: 0x%08X, e6: 0x%08X, m9: 0x%08X, f: %f\n",
+           gsiF16.u16datum,
+           gsiF16.fields.s1, gsiF16.fields.e6, gsiF16.fields.m9,
+           floF32_from_gsiF16(gsiF16).f32datum);
 
     return 0;
 }
